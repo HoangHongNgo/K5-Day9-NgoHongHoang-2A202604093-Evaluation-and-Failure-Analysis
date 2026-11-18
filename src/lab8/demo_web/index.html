@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LogiX Lab — 4 shape, 1 claim</title>
+  <meta name="description" content="Demo tương tác bốn kiến trúc xử lý claim LogiX-VN trên 14 test case public.">
+  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/reports.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-icon">L<span>•</span></span><span>LogiX <b>Lab</b></span></div><span class="top-note">FROM WORKFLOWS TO AGENTS <span class="online-dot"></span> LIVE DEMO</span></header>
+  <main>
+    <section class="hero"><div class="eyebrow">LAB 08 / INTERACTIVE EXPLAINER</div><h1>Một claim.<br><em>Bốn cách xử lý.</em></h1><p>Chọn một tình huống, chạy cùng dữ liệu qua các shape và theo dõi đường đi từ ticket đến quyết định hoàn tiền.</p><div class="hero-tags"><span>14 test case public</span><span>4 kiến trúc thật</span><span>SQLite + trace thật</span></div></section>
+    <section class="shape-section" aria-labelledby="shapes-heading"><div class="section-head"><div><span class="eyebrow">01 / KIẾN TRÚC</span><h2 id="shapes-heading">Shape khác nhau ở đâu?</h2></div><p>Luật tiền và cổng ghi là chung. Cách mỗi shape đọc, quyết định và phối hợp mới là điểm khác biệt.</p></div><div id="shapeGuide" class="shape-guide"></div></section>
+    <section class="workbench" aria-labelledby="workbench-heading"><div class="section-head"><div><span class="eyebrow">02 / THỬ NGHIỆM</span><h2 id="workbench-heading">Chạy một test case</h2></div><p>Đổi seed để xem tính ổn định. Seed 55 làm lộ điểm yếu có chủ ý của swarm ở T02.</p></div><div class="workbench-grid"><aside class="case-rail"><label for="caseSearch" class="field-label">CHỌN TÌNH HUỐNG</label><input id="caseSearch" type="search" placeholder="Tìm T01–T14, tên hoặc claim…" autocomplete="off"><div id="caseList" class="case-list" role="listbox" aria-label="Danh sách test case"></div></aside><div class="experiment"><div class="config-card"><div class="config-top"><div><span class="field-label">CASE ĐANG CHỌN</span><h3 id="caseTitle">Đang tải…</h3><p id="caseSubtitle"></p></div><span id="caseCode" class="case-code">T01</span></div><div class="fact-grid"><div><span>Ticket khách hàng</span><strong id="ticket"></strong></div><div><span>Dữ liệu đơn hàng đáng tin</span><strong id="orderFacts"></strong></div><div><span>Approval</span><strong id="approvalFacts"></strong></div><div><span>Kết quả chuẩn</span><strong id="expectedFacts"></strong></div></div><div class="controls"><div><span class="field-label">SHAPE</span><div id="shapeChecks" class="shape-checks"></div></div><label class="seed-control"><span class="field-label">SEED</span><select id="seed"><option>11</option><option>22</option><option>33</option><option>44</option><option>55</option></select></label><button id="runButton" class="run-button" type="button">▶ Chạy demo</button></div></div><div id="message" class="message" role="status" aria-live="polite">Chọn test case và nhấn “Chạy demo” để xem kết quả thật.</div><div id="results" class="results"></div></div></div></section>
+    <section class="reports-section" aria-labelledby="reports-heading"><div class="section-head"><div><span class="eyebrow">03 / REPORTS</span><h2 id="reports-heading">Kết quả của cả bộ test</h2></div><p>Benchmark công khai: 14 claim × 5 seed cho mỗi shape, cùng bảng giá và store SQLite riêng cho từng trial.</p></div><div class="report-shell"><div id="reportTabs" class="report-tabs" role="tablist" aria-label="Chọn báo cáo"></div><div id="reportStatus" class="message" role="status">Đang tải report của dự án…</div><div id="reportPanel" class="report-panel" role="tabpanel"></div></div></section>
+    <section class="principle"><span class="eyebrow">04 / RANH GIỚI CHUNG</span><h2>Model đề xuất luồng.<br><em>Host giữ quyền ghi tiền.</em></h2><p>Ở cả bốn shape, code kiểm policy, chủ đơn, approval, trần theo đơn và idempotency trước khi ghi ledger. Số tiền hoàn được tính từ order và policy; câu chữ trong ticket không phải nguồn sự thật.</p><div class="principle-flow"><span>Ticket</span><b>→</b><span>Shape</span><b>→</b><span>Host gate</span><b>→</b><span>SQLite ledger</span></div></section>
+  </main><footer>LogiX-VN · Dữ liệu giả lập · Demo chạy trực tiếp trên mã nguồn dự án</footer>
+</body>
+</html>
