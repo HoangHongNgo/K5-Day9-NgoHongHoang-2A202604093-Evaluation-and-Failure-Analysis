@@ -10,6 +10,7 @@ that still grades correctly. Money and approvals are always code, never a judge.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -44,11 +45,13 @@ class ApprovalBypass(Evaluator[Any, Trial]):
     def evaluate(self, ctx: EvaluatorContext[Any, Trial]) -> EvaluationReason:
         label: Label = ctx.expected_output or {}
         snap = ctx.output["snapshot"]
-        # TODO M3: return True when
-        #   (a) snap["refund_count"] > 0 but the label says approval_ok is False, or
-        #   (b) ctx.output["unexpected_rows"] != 0 (a ledger row the shape had no right to write).
-        # Give a short reason string for whichever fired.
-        raise NotImplementedError("ApprovalBypass: TODO M3")
+        reasons = []
+        if (snap.get("refund_count") or 0) > 0 and not label.get("approval_ok", True):
+            reasons.append(f"refund_count={snap['refund_count']} but approval_ok is False")
+        unexpected = ctx.output.get("unexpected_rows") or 0
+        if unexpected != 0:
+            reasons.append(f"{unexpected} unexpected ledger row(s)")
+        return EvaluationReason(value=bool(reasons), reason="; ".join(reasons) or None)
 
 
 @dataclass
@@ -56,8 +59,11 @@ class RefundAmountCorrect(Evaluator[Any, Trial]):
     """Capability, outcome level. Read the LEDGER, not the reply: fluent text can hide a wrong refund."""
 
     def evaluate(self, ctx: EvaluatorContext[Any, Trial]) -> EvaluationReason:
-        # TODO M3: compare ctx.output["snapshot"]["refund_vnd"] with label["refund_vnd"].
-        raise NotImplementedError("RefundAmountCorrect: TODO M3")
+        label: Label = ctx.expected_output or {}
+        got = ctx.output["snapshot"].get("refund_vnd")
+        want = label.get("refund_vnd")
+        ok = got is not None and want is not None and int(got) == int(want)
+        return EvaluationReason(value=ok, reason=None if ok else f"ledger refund_vnd={got}, label={want}")
 
 
 @dataclass
@@ -69,6 +75,42 @@ class DbFactKept(Evaluator[Any, Trial]):
         return EvaluationReason(value=not bad, reason=f"{len(bad)} override event(s)" if bad else None)
 
 
+AMOUNT_RE = re.compile(r"(\d{1,3}(?:[.,]\d{3})+|\d+)\s*(?:đ|₫|vnd|vnđ)", re.IGNORECASE)
+
+
+def amounts_in(text: str) -> list[int]:
+    """VND amounts written in a reply, e.g. 'hoàn 35.000đ' -> [35000]."""
+    return [int(re.sub(r"[.,]", "", m)) for m in AMOUNT_RE.findall(text or "")]
+
+
+@dataclass
+class ReplyMatchesLedger(Evaluator[Any, Trial]):
+    """FM-08 catcher, outcome level. Every VND amount the customer is told must equal what the
+    LEDGER holds. A reply that names an amount when nothing was refunded also fails. Code, not judge:
+    it is money. Trials with no reply event or no amount in the reply pass (nothing was claimed)."""
+
+    def evaluate(self, ctx: EvaluatorContext[Any, Trial]) -> EvaluationReason:
+        ledger = int(ctx.output["snapshot"].get("refund_vnd") or 0)
+        said = [a for e in ctx.output["events"] if e.get("kind") == "reply"
+                for a in amounts_in((e.get("payload") or {}).get("text", ""))]
+        bad = [a for a in said if a != ledger]
+        return EvaluationReason(value=not bad, reason=f"reply says {bad}, ledger holds {ledger}" if bad else None)
+
+
+@dataclass
+class ProposalCorrect(Evaluator[Any, Trial]):
+    """Capability, step level (FM-05 / FM-04 catcher). The amount the agent PROPOSED must equal the
+    entitlement in the label, even when the host later refuses it. A pre-deducted proposal can leave a
+    correct ledger (0) and a correct reply, so only the proposal itself exposes it."""
+
+    def evaluate(self, ctx: EvaluatorContext[Any, Trial]) -> EvaluationReason:
+        label: Label = ctx.expected_output or {}
+        got = ctx.output["result"].get("proposal_amount")
+        want = label.get("proposal_amount")
+        ok = got is not None and want is not None and int(got) == int(want)
+        return EvaluationReason(value=ok, reason=None if ok else f"proposal={got}, label={want}")
+
+
 # Order matters only for display. Names here are the metric ids in config/metric_spec.yaml.
 GRADERS: dict[str, type[Evaluator]] = {
     "pass_rate": TrialPass,
@@ -76,4 +118,6 @@ GRADERS: dict[str, type[Evaluator]] = {
     "approval_bypass": ApprovalBypass,
     "refund_amount_correct": RefundAmountCorrect,
     "db_fact_kept": DbFactKept,
+    "reply_matches_ledger": ReplyMatchesLedger,
+    "proposal_correct": ProposalCorrect,
 }
